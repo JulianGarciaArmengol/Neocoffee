@@ -1,0 +1,164 @@
+//
+//  FavoritesViewController.swift
+//  Neocoffee
+//
+//  Created by julian.garcia on 30/07/24.
+//
+
+import UIKit
+import Combine
+import FirebaseAnalytics
+
+class FavoritesViewController: UIViewController {
+    let viewModel: FavoritesViewModel
+    
+    private var dataSource: UITableViewDiffableDataSource<Section, Item>!
+    
+    private let tableView: UITableView = {
+        let view = UITableView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = nil
+        view.estimatedRowHeight = 150.0
+        view.rowHeight = UITableView.automaticDimension
+        view.separatorStyle = .none
+        // register cells
+        view.register(ImageWithTitleViewCell.self, forCellReuseIdentifier: "header")
+        view.register(FavoriteViewCell.self, forCellReuseIdentifier: "cell")
+        
+        return view
+    }()
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    init(
+        viewModel: FavoritesViewModel = FavoritesViewModel()
+    ) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        view.backgroundColor = UIColor(named: "background")
+        
+        viewModel.getItems()
+        
+        setupViews()
+        setupCollectionView()
+        setupBindings()
+        
+        tableView.delegate = self
+        
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        viewModel.getItems()
+        
+        Analytics.logEvent("favorites_open", parameters: [:])
+    }
+    
+    private func setupViews() {
+        view.addSubview(tableView)
+        
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+        ])
+    }
+    
+    private func setupCollectionView() {
+        dataSource = UITableViewDiffableDataSource(tableView: tableView, cellProvider: { tableView, indexPath, item in
+            
+            let cell: UITableViewCell
+            
+            switch item {
+            case .sectionBanner(_ ):
+                let cellRecommended = tableView.dequeueReusableCell(withIdentifier: "header", for: indexPath) as! ImageWithTitleViewCell
+                
+                cellRecommended.imageBackgroundView.image = UIImage(named: "bn1")
+                cellRecommended.titleLabel.text = "Quizas quieras probar tambien ..."
+                
+                cell = cellRecommended
+            case .sectionFeatures(let favorite):
+                let cellFavorite = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! FavoriteViewCell
+                
+                cellFavorite.titleLabel.text = "Lorem ipsum"
+                cellFavorite.descriptionTextView.text = """
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                """
+                cellFavorite.imageRoundedView.image = UIImage(named: favorite.image)
+                cellFavorite.backgroundColor = UIColor.clear
+                cellFavorite.layer.backgroundColor = UIColor.clear.cgColor
+                
+                cell = cellFavorite
+            default:
+                fatalError("could not create cell")
+            }
+            
+            return cell
+        })
+    }
+    
+    private func setupBindings() {
+        viewModel.data
+            .sink {[weak self] items in
+                self?.applySnapshot(items)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func applySnapshot(_ items: [Item]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        snapshot.appendSections([.banner, .features])
+        
+        snapshot.appendItems([items.first!], toSection: .banner)
+        snapshot.appendItems(items, toSection: .features)
+        dataSource.apply(snapshot)
+    }
+}
+
+extension FavoritesViewController: TabBarTopControllerSubView {
+    func ajustSafeArea(additionalSafeAreaInsets: UIEdgeInsets) {
+        self.additionalSafeAreaInsets = additionalSafeAreaInsets
+    }
+}
+
+extension FavoritesViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return indexPath.row == 0 ? 200 : 160
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let deleteAction = UIContextualAction(style: .destructive, title: "delete") {[weak self] _, _, completionHandler in
+            
+            if let _ = self?.viewModel.data.values {
+                self?.viewModel.deleteItemAt(indexPath: indexPath)
+                self?.tableView.reloadSections([0], with: .automatic)
+            }
+            
+            completionHandler(true)
+        }
+        
+        return UISwipeActionsConfiguration(actions: [deleteAction])
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if indexPath.row == viewModel.data.value.count - 1 {
+            //viewModel.getNewItems()
+            print("get more items")
+        }
+    }
+}

@@ -17,36 +17,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         self.window = window
         
-        
-        let homeVC = HomeViewController()
-        homeVC.tabBarItem = UITabBarItem(
-            title: "Home",
-            image: UIImage(systemName: "house.fill"),
-            tag: 0
-        )
-        
-        let favoritesVC = FavoritesViewController()
-        favoritesVC.tabBarItem = UITabBarItem(
-            title: "Favorites",
-            image: UIImage(systemName: "heart.fill"),
-            tag: 1
-        )
-        
-        let profileVC = ProfileViewController()
-        profileVC.tabBarItem = UITabBarItem(
-            title: "Profile",
-            image: UIImage(systemName: "person.circle"),
-            tag: 2
-        )
-        
-        let tabBarVC = TabBarTopController()
-        tabBarVC.setViewControllers([homeVC, favoritesVC, profileVC], animated: false)
-        
-        window.rootViewController = tabBarVC
+        window.rootViewController = LoginViewController()
+//        window.rootViewController = ProfileViewController()
         
         window.makeKeyAndVisible()
     }
-
+    
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
