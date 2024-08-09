@@ -11,11 +11,14 @@ import Combine
 final class FavoritesViewModel {
     private let bannerStore: BannerStore
     private let favoritesStore: FavoritesStore
-        
+    
+    let allFavorites = CurrentValueSubject<[Favorite], Never>([])
+    
     var banners = CurrentValueSubject<[Banner], Never>([])
     var favorites = CurrentValueSubject<[Favorite], Never>([])
     
-    private var currentPage: Int = 0
+    private var page = CurrentValueSubject<Int, Never>(1)
+    private let itemsPerPage = 8
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -43,9 +46,25 @@ final class FavoritesViewModel {
             .sink {[weak self] result in
                 switch result {
                 case .success(let favorites):
-                    self?.favorites.send(favorites)
+                    self?.allFavorites.send(favorites)
                 case .failure(let error):
                     print(error)
+                }
+            }
+            .store(in: &cancellables)
+        
+        allFavorites
+            .combineLatest(page)
+            .sink {[weak self] (favorites, page) in
+                guard let self else { return }
+                
+                let numberOfItems = self.itemsPerPage * page
+                let count = favorites.count
+                
+                if count <= numberOfItems {
+                    self.favorites.send(favorites)
+                } else {
+                    self.favorites.send(Array(favorites[0..<numberOfItems]))
                 }
             }
             .store(in: &cancellables)
@@ -56,8 +75,8 @@ final class FavoritesViewModel {
         favoritesStore.getFavorites(email: "julian.garcia@neoris.com")
     }
     
-    func getNewItems() {
-        // Add Pagination
+    func nextPage() {
+        page.send(page.value + 1)
     }
     
     func deleteItemAt(indexPath: IndexPath) {

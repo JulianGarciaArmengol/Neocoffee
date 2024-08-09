@@ -9,16 +9,20 @@ import Foundation
 import Combine
 
 final class HomeViewModel {
-//    private let dataStore: DataStore
     private let bannerStore: BannerStore
     private let dessertStore: DessertStore
     private let recommendedStore: RecommendedStore
     
-    var banners = CurrentValueSubject<[Banner], Never>([])
-    var desserts = CurrentValueSubject<[Dessert], Never>([])
-    var recommended = CurrentValueSubject<[Recommended], Never>([])
+    let allDesserts = CurrentValueSubject<[Dessert], Never>([])
+    
+    let banners = CurrentValueSubject<[Banner], Never>([])
+    let desserts = CurrentValueSubject<[Dessert], Never>([])
+    let recommended = CurrentValueSubject<[Recommended], Never>([])
     
     var selectedFeature = PassthroughSubject<Dessert, Never>()
+    
+    private var page = CurrentValueSubject<Int, Never>(1)
+    private let itemsPerPage = 8
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -34,7 +38,7 @@ final class HomeViewModel {
         setupBindings()
     }
     
-    func setupBindings() {
+    private func setupBindings() {
         bannerStore.banners
             .sink {[weak self] banners in
                 self?.banners.send(banners)
@@ -46,12 +50,28 @@ final class HomeViewModel {
                 switch result {
                 case .success(let desserts):
                     // TODO: paginate desserts!
-                    self?.desserts.send(desserts)
+                    self?.allDesserts.send(desserts)
                 case .failure(let error):
                     print("error: " +  error.localizedDescription)
                 }
             }
             .store(in: &cancellables)
+        
+        allDesserts
+            .combineLatest(page)
+            .sink {[weak self] (desserts, page) in
+            guard let self else { return }
+            
+            let numberOfItems = self.itemsPerPage * page
+            let count = desserts.count
+            
+            if count <= numberOfItems {
+                self.desserts.send(desserts)
+            } else {
+                self.desserts.send(Array(desserts[0..<numberOfItems]))
+            }
+        }
+        .store(in: &cancellables)
         
         recommendedStore.recommended
             .sink {[weak self] recommended in
@@ -76,12 +96,16 @@ final class HomeViewModel {
         bannerStore.getBanners()
     }
     
-    func getDesserts(page: Int = 0) {
+    func getDesserts() {
         dessertStore.getDesserts()
     }
     
     func getRecommended() {
         recommendedStore.getRecommended()
+    }
+    
+    func nextPage() {
+        page.send(page.value + 1)
     }
     
     func didSelectFeatureAt(_ indexPath: IndexPath) {

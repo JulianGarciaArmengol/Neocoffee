@@ -180,9 +180,8 @@ extension FavoritesViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if indexPath.row == viewModel.favorites.value.count - 1 {
-            //viewModel.getNewItems()
-            print("get more items")
+        if indexPath.section == 1 && indexPath.row == viewModel.favorites.value.count - 1 {
+            viewModel.nextPage()
         }
     }
 }

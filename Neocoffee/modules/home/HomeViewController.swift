@@ -15,8 +15,6 @@ fileprivate enum SectionDessert {
 class HomeViewController: UIViewController {
     private let viewModel: HomeViewModel
     
-    private var currentPage: Int = 1
-
     private var dataSource: UICollectionViewDiffableDataSource<SectionDessert, Dessert>!
     
     private lazy var paginationManager: HorizontalPaginationManager = {
@@ -174,6 +172,7 @@ class HomeViewController: UIViewController {
     private func setupBindings() {
         viewModel.banners
             .dropFirst()
+            .receive(on: DispatchQueue.main)
             .sink {[weak self] banners in
 //                print(banners)
                 self?.bannerView.images = banners.map {
@@ -183,6 +182,7 @@ class HomeViewController: UIViewController {
             .store(in: &cancellables)
         
         viewModel.desserts
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink {[weak self] desserts in
                 self?.applySnapshot(desserts)
@@ -191,6 +191,7 @@ class HomeViewController: UIViewController {
         
         viewModel.recommended
             .dropFirst()
+            .receive(on: DispatchQueue.main)
             .sink {[weak self] recommended in
                 self?.recommendedView.images = recommended.map {
                     UIImage(named: $0.image)!
@@ -199,6 +200,7 @@ class HomeViewController: UIViewController {
             .store(in: &cancellables)
         
         viewModel.selectedFeature
+            .receive(on: DispatchQueue.main)
             .sink {[weak self] dessert in
                 // present detail
                 
@@ -256,11 +258,9 @@ extension HomeViewController: HorizontalPaginationManagerDelegate {
     
     func loadMore(completion: @escaping (Bool) -> Void) {
         print("load more")
-        delay(2.0) { [weak self] in
-            guard let self else { return }
+        delay(1.0) { [weak self] in
             
-            viewModel.getDesserts(page: self.currentPage)
-            self.currentPage += 1
+            self?.viewModel.nextPage()
             
             completion(true)
         }
