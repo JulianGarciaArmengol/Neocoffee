@@ -9,10 +9,20 @@ import UIKit
 import Combine
 import FirebaseAnalytics
 
+fileprivate enum SectionFavorite {
+    case banners
+    case favorites
+}
+
+fileprivate enum Item: Hashable {
+    case banner([Banner])
+    case favorite(Favorite)
+}
+
 class FavoritesViewController: UIViewController {
     let viewModel: FavoritesViewModel
     
-    private var dataSource: UITableViewDiffableDataSource<Section, Item>!
+    private var dataSource: UITableViewDiffableDataSource<SectionFavorite, Item>!
     
     private let tableView: UITableView = {
         let view = UITableView()
@@ -46,20 +56,17 @@ class FavoritesViewController: UIViewController {
         
         view.backgroundColor = UIColor(named: "background")
         
-        viewModel.getItems()
-        
         setupViews()
         setupCollectionView()
         setupBindings()
         
         tableView.delegate = self
-        
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        viewModel.getItems()
+        viewModel.getAllItems()
         
         Analytics.logEvent("favorites_open", parameters: [:])
     }
@@ -81,27 +88,26 @@ class FavoritesViewController: UIViewController {
             let cell: UITableViewCell
             
             switch item {
-            case .sectionBanner(_ ):
+            case .banner(_ ):
                 let cellRecommended = tableView.dequeueReusableCell(withIdentifier: "header", for: indexPath) as! ImageWithTitleViewCell
-                
-                cellRecommended.imageBackgroundView.image = UIImage(named: "bn1")
+                        
+                cellRecommended.imageBackgroundView.image = UIImage(named: "bn2")
                 cellRecommended.titleLabel.text = "Quizas quieras probar tambien ..."
                 
                 cell = cellRecommended
-            case .sectionFeatures(let favorite):
+                
+            case .favorite(let favorite):
                 let cellFavorite = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! FavoriteViewCell
                 
-                cellFavorite.titleLabel.text = "Lorem ipsum"
+                cellFavorite.titleLabel.text = favorite.name
                 cellFavorite.descriptionTextView.text = """
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                """
-                cellFavorite.imageRoundedView.image = UIImage(named: favorite.image)
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                                """
+                cellFavorite.imageRoundedView.image = UIImage(named: "f1")
                 cellFavorite.backgroundColor = UIColor.clear
                 cellFavorite.layer.backgroundColor = UIColor.clear.cgColor
                 
                 cell = cellFavorite
-            default:
-                fatalError("could not create cell")
             }
             
             return cell
@@ -109,19 +115,36 @@ class FavoritesViewController: UIViewController {
     }
     
     private func setupBindings() {
-        viewModel.data
-            .sink {[weak self] items in
+        viewModel.banners
+            .combineLatest(viewModel.favorites)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink {[weak self] (banners, favorites) in
+                var items = [Item]()
+                
+                items.append(Item.banner(banners))
+                items.append(contentsOf: favorites.map { .favorite($0) })
+                
+                print(items)
                 self?.applySnapshot(items)
             }
             .store(in: &cancellables)
     }
     
     private func applySnapshot(_ items: [Item]) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
-        snapshot.appendSections([.banner, .features])
+        var snapshot = NSDiffableDataSourceSnapshot<SectionFavorite, Item>()
         
-        snapshot.appendItems([items.first!], toSection: .banner)
-        snapshot.appendItems(items, toSection: .features)
+        snapshot.appendSections([.banners, .favorites])
+        
+        items.forEach { item in
+            switch item {
+            case .banner(_ ):
+                snapshot.appendItems([item], toSection: .banners)
+            case .favorite(_ ):
+                snapshot.appendItems([item], toSection: .favorites)
+            }
+        }
+        
         dataSource.apply(snapshot)
     }
 }
@@ -142,11 +165,12 @@ extension FavoritesViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard indexPath.section > 0 else { return nil }
+        
         let deleteAction = UIContextualAction(style: .destructive, title: "delete") {[weak self] _, _, completionHandler in
             
-            if let _ = self?.viewModel.data.values {
+            if let _ = self?.viewModel.favorites.values {
                 self?.viewModel.deleteItemAt(indexPath: indexPath)
-                self?.tableView.reloadSections([0], with: .automatic)
             }
             
             completionHandler(true)
@@ -156,7 +180,7 @@ extension FavoritesViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if indexPath.row == viewModel.data.value.count - 1 {
+        if indexPath.row == viewModel.favorites.value.count - 1 {
             //viewModel.getNewItems()
             print("get more items")
         }

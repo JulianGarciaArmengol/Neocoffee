@@ -9,42 +9,60 @@ import Foundation
 import Combine
 
 final class FavoritesViewModel {
-    var data = CurrentValueSubject<[Item], Never>([])
-    private var dataStore: DataStore
+    private let bannerStore: BannerStore
+    private let favoritesStore: FavoritesStore
+        
+    var banners = CurrentValueSubject<[Banner], Never>([])
+    var favorites = CurrentValueSubject<[Favorite], Never>([])
     
     private var currentPage: Int = 0
     
-    init(dataStore: DataStore = DataStore.shared) {
-        self.dataStore = dataStore
+    private var cancellables = Set<AnyCancellable>()
+    
+    init(
+        BannerStore: BannerStore = BannerStore(),
+        FavoritesStore: FavoritesStore = FavoritesStore()
+    ) {
+        self.bannerStore = BannerStore
+        self.favoritesStore = FavoritesStore
+        
+        setupBindings()
     }
     
-    func getItems() {
-        var items = [Item]()
+    func setupBindings() {
+        // banners
+        bannerStore.banners
+            .sink {[weak self] banners in
+                print("banners recived")
+                self?.banners.send(banners)
+            }
+            .store(in: &cancellables)
         
-        items.append(dataStore.defaultData().bannerItems.first!)
-        items.append(contentsOf: dataStore.getSavedItems())
-        
-        data.send(items)
+        // favorites
+        favoritesStore.favorites
+            .sink {[weak self] result in
+                switch result {
+                case .success(let favorites):
+                    self?.favorites.send(favorites)
+                case .failure(let error):
+                    print(error)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    func getAllItems() {
+        bannerStore.getBanners()
+        favoritesStore.getFavorites(email: "julian.garcia@neoris.com")
     }
     
     func getNewItems() {
-        var items = [Item]()
-        currentPage += 1
-        
-        items.append(contentsOf: data.value)
-        items.append(contentsOf: dataStore.getSavedItems(page: currentPage))
-        
-        print(items)
-        
-        data.send(items)
+        // Add Pagination
     }
     
     func deleteItemAt(indexPath: IndexPath) {
-        var newData = data.value
+        let itemToDelete = favorites.value[indexPath.row]
         
-        dataStore.removeItem(newData[indexPath.row])
-        newData.remove(at: indexPath.row)
-        
-        data.send(newData)
+        favoritesStore.deleteFavorite(email: "julian.garcia@neoris.com", dessert: itemToDelete)
     }
 }

@@ -8,12 +8,16 @@
 import UIKit
 import Combine
 
+fileprivate enum SectionDessert {
+    case dessert
+}
+
 class HomeViewController: UIViewController {
     private let viewModel: HomeViewModel
     
     private var currentPage: Int = 1
 
-    private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
+    private var dataSource: UICollectionViewDiffableDataSource<SectionDessert, Dessert>!
     
     private lazy var paginationManager: HorizontalPaginationManager = {
         let manager = HorizontalPaginationManager(scrollView: self.collectionView)
@@ -51,12 +55,15 @@ class HomeViewController: UIViewController {
         collectionView.contentInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
         collectionView.backgroundColor = nil
         
+        collectionView.backgroundColor = .blue
+        
         return collectionView
     }()
     
     private let recommendedView: UIImageWithTimer = {
         let view = UIImageWithTimer(image: nil, timeInterval: 7)
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .yellow
         return view
     }()
     
@@ -107,6 +114,9 @@ class HomeViewController: UIViewController {
         setupPagination()
         setupBindings()
         
+        viewModel.getAllData()
+        
+        // TODO: move elsewhere
         buttonMap.addAction(UIAction(handler: { _ in
             let vc = MapViewController()
             
@@ -150,20 +160,11 @@ class HomeViewController: UIViewController {
     }
     
     private func setupCollectionView() {
-        dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView, cellProvider: { collectionView, indexPath, item in
+        dataSource = UICollectionViewDiffableDataSource<SectionDessert, Dessert>(collectionView: collectionView, cellProvider: { collectionView, indexPath, dessert in
             
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as! RoundedImageCollectionViewCell
             
-            switch item {
-            case .sectionBanner(let banners):
-                print(banners)
-                cell.backgroundColor = .red
-            case .sectionFeatures(let features):
-                cell.imageView.image = UIImage(named: features.image)
-            case .sectionRecommended(let recommended):
-                print(recommended)
-                cell.backgroundColor = .blue
-            }
+            cell.imageView.image = UIImage(named: "f1")
             
             return cell
         })
@@ -171,45 +172,49 @@ class HomeViewController: UIViewController {
     
     
     private func setupBindings() {
-        viewModel.data
-            .compactMap { $0 }
-            .sink {[weak self] res in
-                
-                // banner
-                if ((self?.bannerView.images) == nil) {
-                    self?.bannerView.images = res.banners.map {
-                        UIImage(named: $0.image)!
-                    }
+        viewModel.banners
+            .dropFirst()
+            .sink {[weak self] banners in
+//                print(banners)
+                self?.bannerView.images = banners.map {
+                    UIImage(named: $0.image)!
                 }
-                
-                // recommended
-                if ((self?.recommendedView.images) == nil) {
-                    self?.recommendedView.images = res.recommended.map {
-                        UIImage(named: $0.image)!
-                    }
+            }
+            .store(in: &cancellables)
+        
+        viewModel.desserts
+            .receive(on: DispatchQueue.main)
+            .sink {[weak self] desserts in
+                self?.applySnapshot(desserts)
+            }
+            .store(in: &cancellables)
+        
+        viewModel.recommended
+            .dropFirst()
+            .sink {[weak self] recommended in
+                self?.recommendedView.images = recommended.map {
+                    UIImage(named: $0.image)!
                 }
-                
-                // snapshot for features
-                self?.applySnapshot(res)
             }
             .store(in: &cancellables)
         
         viewModel.selectedFeature
-        
-            .compactMap { $0 }
-            .sink {[weak self] feature in
+            .sink {[weak self] dessert in
                 // present detail
                 
-                self?.present(FeatureDetailViewController(feature: feature), animated: true)
+                self?.present(
+                    FeatureDetailViewController(dessert: dessert),
+                    animated: true
+                )
             }
             .store(in: &cancellables)
     }
     
-    private func applySnapshot(_ elements: Response) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+    private func applySnapshot(_ elements: [Dessert]) {
+        var snapshot = NSDiffableDataSourceSnapshot<SectionDessert, Dessert>()
         
-        snapshot.appendSections([Section.features])
-        snapshot.appendItems(elements.featureItems, toSection: .features)
+        snapshot.appendSections([.dessert])
+        snapshot.appendItems(elements, toSection: .dessert)
         
         dataSource.apply(snapshot)
     }
@@ -254,7 +259,7 @@ extension HomeViewController: HorizontalPaginationManagerDelegate {
         delay(2.0) { [weak self] in
             guard let self else { return }
             
-            viewModel.getFeatures(page: self.currentPage)
+            viewModel.getDesserts(page: self.currentPage)
             self.currentPage += 1
             
             completion(true)

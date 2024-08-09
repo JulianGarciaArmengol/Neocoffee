@@ -13,6 +13,7 @@ class UIImageWithTimer: UIImageView {
         didSet {
             guard let images, !images.isEmpty else { return }
             image = images.first!
+            startTimer()
         }
     }
     
@@ -28,6 +29,10 @@ class UIImageWithTimer: UIImageView {
     
     convenience init(image: UIImage?, timeInterval: Double = 5) {
         self.init(image: image)
+    }
+    
+    func startTimer() {
+        timer?.invalidate()
         
         timer = Timer.scheduledTimer(
             timeInterval: timeInterval,

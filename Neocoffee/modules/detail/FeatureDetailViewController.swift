@@ -6,12 +6,17 @@
 //
 
 import UIKit
+import Combine
 import FirebaseAnalytics
 
 class FeatureDetailViewController: UIViewController {
-    var feature: Features
-    var dataStore: DataStore = DataStore.shared
-
+    
+    private let dessert: Dessert
+    
+    private let favoritesStore: FavoritesStore
+    
+    private var cancellables = Set<AnyCancellable>()
+    
     var imageView: UIImageView = {
         let view = UIImageView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -28,8 +33,12 @@ class FeatureDetailViewController: UIViewController {
         return view
     }()
     
-    init(feature: Features) {
-        self.feature = feature
+    init(
+        dessert: Dessert,
+        favoritesStore: FavoritesStore = FavoritesStore()
+    ) {
+        self.dessert = dessert
+        self.favoritesStore = favoritesStore
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -43,6 +52,7 @@ class FeatureDetailViewController: UIViewController {
         setupViews()
         setupDetails()
         setupActions()
+        setupBindings()
     }
     
     private func setupViews() {
@@ -63,9 +73,11 @@ class FeatureDetailViewController: UIViewController {
     }
     
     private func setupDetails() {
-        imageView.image = UIImage(named: feature.image)
+        imageView.image = UIImage(named: "f1")
         
-        detailView.labelTitle.text = "Lorem ipsum"
+        detailView.labelTitle.text = dessert.name
+        detailView.textViewDescription.text = dessert.description
+        
         detailView.buttonShare.setImage(
             UIImage(systemName: "square.and.arrow.up")!,
             for: .normal
@@ -74,22 +86,34 @@ class FeatureDetailViewController: UIViewController {
             UIImage(systemName: "heart.fill")!,
             for: .normal
         )
-        
-        detailView.textViewDescription.text = """
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-        """
+    }
+    
+    private func setupBindings() {
+        favoritesStore.favorites
+            .sink {[weak self] result in
+                switch result {
+                case .success(_ ):
+                    print("favorite added")
+                    
+                    // Log analytics event
+                    guard let self else { return }
+            
+                    Analytics.logEvent("favorite_added", parameters: [
+                        "id": self.dessert.id as NSObject,
+                        "cake_name": self.dessert.name as NSObject,
+                        "cake_description": self.dessert.description as NSObject,
+                    ])
+                case .failure(let error):
+                    print(error)
+                }
+            }.store(in: &cancellables)
     }
     
     private func setupActions() {
         let likeAction = UIAction {[unowned self] _ in
-            self.dataStore.SaveItem(Item.sectionFeatures(self.feature))
+            let email = "julian.garcia@neoris.com"
             
-            Analytics.logEvent("favorite_added", parameters: [
-                "id": feature.id as NSObject,
-                "url": feature.url as NSObject,
-                "cake_name": "Lorem ipsum" as NSObject,
-                "cake_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." as NSObject,
-            ])
+            favoritesStore.saveFavorite(email: email, dessert: dessert)
         }
         
         detailView.buttonLike.addAction(likeAction, for: .touchUpInside)

@@ -8,7 +8,6 @@
 import Foundation
 
 struct LocationStore {
-    
     func defaultStores() -> [Store] {
         [
             .init(
