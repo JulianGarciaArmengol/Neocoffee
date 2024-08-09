@@ -36,9 +36,6 @@ class DessertStore {
                 return
             }
             
-            // send data
-            print(response.data)
-            
             self?.desserts.send(.success(response.data))
             
         }.resume()

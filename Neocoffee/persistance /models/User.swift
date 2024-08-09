@@ -16,13 +16,15 @@ class User {
     var phone: String
     var password: String
     var address: String?
+    var image: String?
     
     init(
         name: String,
         mail: String,
         phone: String,
         password: String,
-        address: String? = nil
+        address: String? = nil,
+        image: String? = nil
     ) {
         self.id = UUID()
         self.name = name

@@ -107,7 +107,6 @@ class UIFormLoginView: UIView {
             view.spacing = 6
             view.alignment = .leading
             view.isLayoutMarginsRelativeArrangement = true
-            view.translatesAutoresizingMaskIntoConstraints = false
             
             return view
         }()

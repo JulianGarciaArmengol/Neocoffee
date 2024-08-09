@@ -80,7 +80,6 @@ class ProfileViewController: UIViewController {
         loginFormView.emailLabel.text = user.mail
         loginFormView.phoneLabel.text = user.phone
         loginFormView.addressLabel.text = user.address ?? "Address"
-        
     }
     
     @objc private func handleImageTap() {
@@ -128,11 +127,16 @@ class ProfileViewController: UIViewController {
     }
     
     private func saveImage(_ image: UIImage) {
+        guard let user = UserStore.shared.currentUser else { return }
+        
         if let data = image.jpegData(compressionQuality: 0.8) {
-            let filename = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("profile-image.jpg")
+            
+            let imageName = "\(user.mail)-profile-image.jpg"
+            
+            let filename = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(imageName)
             do {
                 try data.write(to: filename)
-                print("Image saved")
+                UserStore.shared.updateUser(image: imageName)
             } catch {
                 print(error.localizedDescription)
             }
@@ -140,7 +144,10 @@ class ProfileViewController: UIViewController {
     }
     
     private func loadImage() {
-        let filename = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("profile-image.jpg")
+        guard let user = UserStore.shared.currentUser else { return }
+        guard let image = user.image else { return }
+        
+        let filename = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(image)
                 
         if let image = UIImage(contentsOfFile: filename.relativePath) {
             print(image.size)

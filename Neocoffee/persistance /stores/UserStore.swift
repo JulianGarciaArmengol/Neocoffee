@@ -63,7 +63,8 @@ class UserStore {
         mail: String? = nil,
         phone: String? = nil,
         address: String? = nil,
-        password: String? = nil
+        password: String? = nil,
+        image: String? = nil
     ) {
         guard let currentUser else { return }
         
@@ -72,6 +73,7 @@ class UserStore {
         currentUser.phone = phone ?? currentUser.phone
         currentUser.address = address ?? currentUser.address
         currentUser.password = password ?? currentUser.password
+        currentUser.image = image ?? currentUser.image
     }
     
     func deleteUser(_ user: User) {
