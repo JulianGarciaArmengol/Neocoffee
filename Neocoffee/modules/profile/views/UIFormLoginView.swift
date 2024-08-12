@@ -9,8 +9,8 @@ import UIKit
 
 class UIFormLoginView: UIView {
     
-    let profileImageView: UIImageView = {
-        let view = UIImageView()
+    let profileImageView: UIImageRoundedView = {
+        let view = UIImageRoundedView(image: nil)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.image = UIImage(systemName: "person.fill")
         view.contentMode = .scaleAspectFit
@@ -146,10 +146,16 @@ class UIFormLoginView: UIView {
         layer.borderColor = UIColor.black.cgColor
         layer.masksToBounds = true
         
-        
+        let imageContainer: UIView = {
+            let view = UIView()
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.backgroundColor = .clear
+            view.addSubview(profileImageView)
+            return view
+        }()
         // details
         let detailsStack = UIStackView(arrangedSubviews: [
-            profileImageView,
+            imageContainer,
             detailsView
         ])
         detailsStack.translatesAutoresizingMaskIntoConstraints = false
@@ -174,8 +180,12 @@ class UIFormLoginView: UIView {
         
         
         NSLayoutConstraint.activate([
-            profileImageView.widthAnchor.constraint(equalToConstant: 80),
-            profileImageView.heightAnchor.constraint(equalToConstant: 80),
+            profileImageView.centerXAnchor.constraint(equalTo: imageContainer.centerXAnchor),
+            profileImageView.centerYAnchor.constraint(equalTo: imageContainer.centerYAnchor),
+            profileImageView.widthAnchor.constraint(equalToConstant: 90),
+            profileImageView.heightAnchor.constraint(equalToConstant: 90),
+            
+            imageContainer.widthAnchor.constraint(equalToConstant: 80),
             
             detailsStack.topAnchor.constraint(equalTo: topAnchor, constant: 16),
             detailsStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),

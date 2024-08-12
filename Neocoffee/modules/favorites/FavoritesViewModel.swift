@@ -70,18 +70,24 @@ final class FavoritesViewModel {
             .store(in: &cancellables)
     }
     
+    @MainActor
     func getAllItems() {
+        guard let user = UserStore.shared.currentUser else { return }
+        
         bannerStore.getBanners()
-        favoritesStore.getFavorites(email: "julian.garcia@neoris.com")
+        favoritesStore.getFavorites(email: user.mail)
     }
     
     func nextPage() {
         page.send(page.value + 1)
     }
     
+    @MainActor
     func deleteItemAt(indexPath: IndexPath) {
+        guard let user = UserStore.shared.currentUser else { return }
+        
         let itemToDelete = favorites.value[indexPath.row]
         
-        favoritesStore.deleteFavorite(email: "julian.garcia@neoris.com", dessert: itemToDelete)
+        favoritesStore.deleteFavorite(email: user.mail, dessert: itemToDelete)
     }
 }

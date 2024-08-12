@@ -15,12 +15,13 @@ class FeatureDetailViewController: UIViewController {
     
     private let favoritesStore: FavoritesStore
     
+    private var isLiked = false
+    
     private var cancellables = Set<AnyCancellable>()
     
     var imageView: UIImageView = {
         let view = UIImageView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .cyan
         view.contentMode = .scaleAspectFill
         
         return view
@@ -73,7 +74,10 @@ class FeatureDetailViewController: UIViewController {
     }
     
     private func setupDetails() {
-        imageView.image = UIImage(named: "f1")
+        let urlString = "https://eniadesign.com.mx"
+        let url = URL(string: urlString)!.appendingPathComponent(dessert.image)
+        
+        imageView.downloadedFrom(url: url, contentMode: .scaleAspectFill)
         
         detailView.labelTitle.text = dessert.name
         detailView.textViewDescription.text = dessert.description
@@ -111,9 +115,13 @@ class FeatureDetailViewController: UIViewController {
     
     private func setupActions() {
         let likeAction = UIAction {[unowned self] _ in
-            let email = "julian.garcia@neoris.com"
+            guard let user = UserStore.shared.currentUser else { return }
             
-            favoritesStore.saveFavorite(email: email, dessert: dessert)
+            isLiked.toggle()
+            
+            detailView.buttonLike.tintColor = isLiked ? .red : .lightGray
+            
+            favoritesStore.saveFavorite(email: user.mail, dessert: dessert)
         }
         
         detailView.buttonLike.addAction(likeAction, for: .touchUpInside)

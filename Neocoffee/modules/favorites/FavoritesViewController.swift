@@ -67,7 +67,6 @@ class FavoritesViewController: UIViewController {
         super.viewWillAppear(animated)
         
         viewModel.getAllItems()
-        
         Analytics.logEvent("favorites_open", parameters: [:])
     }
     
@@ -103,7 +102,10 @@ class FavoritesViewController: UIViewController {
                 cellFavorite.descriptionTextView.text = """
                                     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                                 """
-                cellFavorite.imageRoundedView.image = UIImage(named: "f1")
+                
+                let randomImageName = "f" + String(Int.random(in: 1...6))
+                
+                cellFavorite.imageRoundedView.image = UIImage(named: randomImageName)
                 cellFavorite.backgroundColor = UIColor.clear
                 cellFavorite.layer.backgroundColor = UIColor.clear.cgColor
                 
@@ -125,7 +127,6 @@ class FavoritesViewController: UIViewController {
                 items.append(Item.banner(banners))
                 items.append(contentsOf: favorites.map { .favorite($0) })
                 
-                print(items)
                 self?.applySnapshot(items)
             }
             .store(in: &cancellables)

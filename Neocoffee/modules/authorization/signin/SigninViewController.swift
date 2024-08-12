@@ -26,6 +26,8 @@ class SignInViewController: UIViewController {
         textField.placeholder = "name"
         textField.textContentType = .username
         textField.borderStyle = .roundedRect
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -35,6 +37,8 @@ class SignInViewController: UIViewController {
         textField.placeholder = "Mail"
         textField.textContentType = .emailAddress
         textField.borderStyle = .roundedRect
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -45,6 +49,7 @@ class SignInViewController: UIViewController {
         textField.textContentType = .newPassword
         textField.borderStyle = .roundedRect
         textField.isSecureTextEntry = true
+        textField.autocorrectionType = .no
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -55,6 +60,7 @@ class SignInViewController: UIViewController {
         textField.textContentType = .password
         textField.borderStyle = .roundedRect
         textField.isSecureTextEntry = true
+        textField.autocorrectionType = .no
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()

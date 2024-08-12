@@ -34,17 +34,46 @@ class LoginViewController: UIViewController {
     }()
     
     private let loginButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Log in", for: .normal)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+        var configuration = UIButton.Configuration.filled()
+        configuration.cornerStyle = .capsule
+        configuration.baseBackgroundColor = UIColor(named: "button-background")
+        configuration.contentInsets = .init(
+            top: 0,
+            leading: 30,
+            bottom: 0,
+            trailing: 30
+        )
+        
+        let view = UIButton(configuration: configuration)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.borderWidth = 1.0
+        view.layer.borderColor = UIColor.gray.cgColor
+        view.layer.cornerRadius = 10
+        view.setTitleColor(UIColor.gray, for: .normal)
+        view.setTitle("Log in", for: .normal)
+        return view
     }()
     
     private let signInButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Sign in", for: .normal)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+        var configuration = UIButton.Configuration.filled()
+        configuration.cornerStyle = .capsule
+        configuration.baseBackgroundColor = UIColor(named: "button-background")
+        configuration.contentInsets = .init(
+            top: 0,
+            leading: 30,
+            bottom: 0,
+            trailing: 30
+        )
+        
+        let view = UIButton(configuration: configuration)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.borderWidth = 1.0
+        view.layer.borderColor = UIColor.gray.cgColor
+        view.layer.cornerRadius = 10
+        view.setTitleColor(UIColor.gray, for: .normal)
+        view.setTitle("Sign in", for: .normal)
+        return view
     }()
     
     private let card: UIView = {
@@ -53,7 +82,7 @@ class LoginViewController: UIViewController {
         view.backgroundColor = .systemBackground
         view.layer.borderWidth = 1.0
         view.layer.borderColor = UIColor.gray.cgColor
-        view.layer.cornerRadius = 15
+        view.layer.cornerRadius = 10
         return view
     }()
     

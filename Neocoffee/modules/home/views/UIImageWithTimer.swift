@@ -23,12 +23,13 @@ class UIImageWithTimer: UIImageView {
     
     private var currentImageIndex = 0
     
-    override init(image: UIImage?) {
+    override init(image: UIImage? = nil) {
         super.init(image: image)
     }
     
     convenience init(image: UIImage?, timeInterval: Double = 5) {
         self.init(image: image)
+        self.timeInterval = timeInterval
     }
     
     func startTimer() {

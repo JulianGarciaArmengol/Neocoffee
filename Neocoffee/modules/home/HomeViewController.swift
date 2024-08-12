@@ -29,7 +29,6 @@ class HomeViewController: UIViewController {
     private let bannerView: UIImageWithTimer = {
         let view = UIImageWithTimer(image: nil, timeInterval: 8)
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .red
         return view
     }()
 
@@ -53,15 +52,12 @@ class HomeViewController: UIViewController {
         collectionView.contentInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
         collectionView.backgroundColor = nil
         
-        collectionView.backgroundColor = .blue
-        
         return collectionView
     }()
     
     private let recommendedView: UIImageWithTimer = {
         let view = UIImageWithTimer(image: nil, timeInterval: 7)
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .yellow
         return view
     }()
     
@@ -111,17 +107,10 @@ class HomeViewController: UIViewController {
         setupCollectionView()
         setupPagination()
         setupBindings()
+        setupActions()
         
         viewModel.getAllData()
         
-        // TODO: move elsewhere
-        buttonMap.addAction(UIAction(handler: { _ in
-            let vc = MapViewController()
-            
-            vc.modalPresentationStyle = .fullScreen //or .overFullScreen for transparency
-            self.present(vc, animated: true, completion: nil)
-            
-        }), for: .touchUpInside)
     }
     
     private func setupViews() {
@@ -162,7 +151,14 @@ class HomeViewController: UIViewController {
             
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as! RoundedImageCollectionViewCell
             
-            cell.imageView.image = UIImage(named: "f1")
+            let numberOfImages = 6
+            let randomImageName = "f" + String((indexPath.row % numberOfImages) + 1)
+            cell.imageView.image = UIImage(named: randomImageName)
+            
+            let urlString = "https://eniadesign.com.mx"
+            
+            let url = URL(string: urlString)!.appendingPathComponent(dessert.image)
+            cell.imageView.downloadedFrom(url: url)
             
             return cell
         })
@@ -210,6 +206,20 @@ class HomeViewController: UIViewController {
                 )
             }
             .store(in: &cancellables)
+    }
+    
+    private func setupActions() {
+        buttonMap.addAction(UIAction(handler: { _ in
+            let vc = MapViewController()
+            vc.modalPresentationStyle = .fullScreen //or .overFullScreen for transparency
+            self.present(vc, animated: true, completion: nil)
+            
+            // TODO: Sheet
+            // let vc = RequestLocationViewController()
+            // vc.modalPresentationStyle = .pageSheet
+            // vc.sheetPresentationController?.detents = [.medium()]
+            
+        }), for: .touchUpInside)
     }
     
     private func applySnapshot(_ elements: [Dessert]) {
